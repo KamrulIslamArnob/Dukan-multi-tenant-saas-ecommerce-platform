@@ -1,0 +1,67 @@
+# Build results
+bin/
+obj/
+*.dll
+*.pdb
+*.deps.json
+*.cache
+*.assets.cache
+
+# IDE
+.vs/
+*.user
+*.suo
+*.userprefs
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+package-lock.json
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Secrets
+appsettings.Development.json
+*.key
+*.pfx
+*.p12
+
+# Logs
+*.log
+logs/
+
+# Test Results
+TestResults/
+coverage/
+
+# Agent/AI files
+.codebase-memory/
+.superpowers/
+.agents/
+.kiro/
+AGENTS.md
+CLAUDE.md
+skills-lock.json
+~/
+
+# Docs at service level
+backend/*/docs/
+frontend/*/docs/
+
+# Misc
+*.tmp
+*.bak
+*.swp
+*.sql
+simulate-git-history.ps1
+Notes.md
