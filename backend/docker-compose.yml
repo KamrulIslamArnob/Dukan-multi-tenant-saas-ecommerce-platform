@@ -1,0 +1,232 @@
+name: dukaan
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: dukaan-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: dukaan
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - dukaan-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  dukaan-api:
+    build:
+      context: ./Dukaan
+      dockerfile: Dockerfile
+    container_name: dukaan-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=dukaan;Username=postgres;Password=password
+      - MediaService__BaseUrl=http://dukaan-media:8080
+      - Redis__ConnectionString=redis:6379
+      - Observability__OtlpEndpoint=http://otel-collector:4317
+      - Observability__ServiceName=dukaan-api
+      - Observability__Environment=Development
+    ports:
+      - "5001:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    networks:
+      - dukaan-network
+
+  otel-collector:
+    image: otel/opentelemetry-collector:latest
+    container_name: dukaan-otel-collector
+    command: ["--config=/etc/otel-collector-config.yml"]
+    volumes:
+      - ./Dukaan/observability/otel-collector-config.yml:/etc/otel-collector-config.yml
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    depends_on:
+      - loki
+      - tempo
+      - prometheus
+    networks:
+      - dukaan-network
+
+  loki:
+    image: grafana/loki:latest
+    container_name: dukaan-loki
+    command: -config.file=/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
+    volumes:
+      - loki-data:/loki
+    networks:
+      - dukaan-network
+
+  tempo:
+    image: grafana/tempo:latest
+    container_name: dukaan-tempo
+    command: -config.file=/etc/tempo.yaml
+    volumes:
+      - ./Dukaan/observability/tempo.yaml:/etc/tempo.yaml
+      - tempo-data:/var/tempo
+    ports:
+      - "3200:3200"
+    networks:
+      - dukaan-network
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: dukaan-prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --web.enable-remote-write-receiver
+    volumes:
+      - ./Dukaan/observability/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    ports:
+      - "9091:9090"
+    networks:
+      - dukaan-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: dukaan-grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - ./Dukaan/observability/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+      - ./Dukaan/observability/grafana-dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml
+      - ./Dukaan/observability/dashboards:/var/lib/grafana/dashboards
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3001:3000"
+    depends_on:
+      - loki
+      - tempo
+      - prometheus
+    networks:
+      - dukaan-network
+
+  minio:
+    image: minio/minio:latest
+    container_name: dukaan-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    networks:
+      - dukaan-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: dukaan-redis
+    ports:
+      - "49153:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - dukaan-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 5
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: dukaan-mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - dukaan-network
+
+  notification-api:
+    build:
+      context: ./Dukaan.Notification
+      dockerfile: Dukaan.Notification.Host/Dockerfile
+    container_name: dukaan-notification
+    ports:
+      - "5003:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=dukaan;Username=postgres;Password=password
+      - Redis__ConnectionString=redis:6379
+      - Email__Smtp__Host=mailhog
+      - Email__Smtp__Port=1025
+      - Email__Smtp__Username=
+      - Email__Smtp__Password=
+      - Email__Smtp__FromName=Dukaan
+      - Email__Smtp__FromAddress=noreply@dukaan.com
+      - Email__Smtp__EnableSsl=false
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
+    networks:
+      - dukaan-network
+
+  dukaan-media:
+    build:
+      context: ./Dukaan.Media
+      dockerfile: Dockerfile
+    container_name: dukaan-media
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=dukaan;Username=postgres;Password=password
+      - MinIO__Endpoint=minio:9000
+      - MinIO__AccessKey=minioadmin
+      - MinIO__SecretKey=minioadmin
+      - Jwt__Key=Your_JWT_secret_Key_Your_JWT_secret_Key_Your_JWT_secret_Key
+      - Observability__OtlpEndpoint=http://otel-collector:4317
+    ports:
+      - "5002:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    networks:
+      - dukaan-network
+
+volumes:
+  postgres-data:
+  loki-data:
+  tempo-data:
+  prometheus-data:
+  grafana-data:
+  minio-data:
+  redis-data:
+
+networks:
+  dukaan-network:
+    driver: bridge
