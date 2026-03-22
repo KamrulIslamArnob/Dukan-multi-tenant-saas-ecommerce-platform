@@ -1,0 +1,41 @@
+using Dukaan.Application.Core.Abstractions;
+using Dukaan.Application.Features.Products;
+using Dukaan.Application.Interfaces;
+using Dukaan.Domain.Entities;
+using ErrorOr;
+
+namespace Dukaan.Application.Features.Products.Commands.UpdateProduct;
+
+public class UpdateProductHandler(
+    IRepository<Product> repository,
+    IRepository<CategorizedProduct> categoryRepository)
+    : ICommandHandler<UpdateProductCommand, ErrorOr<Success>>
+{
+    public async Task<ErrorOr<Success>> Handle(UpdateProductCommand request, CancellationToken cancellationToken)
+    {
+        var product = await repository.GetByIdAsync(request.Id, trackChanges: true, cancellationToken: cancellationToken);
+        
+        if (product is null)
+            return ProductErrors.NotFound;
+
+        product.Name = request.Name;
+        product.Description = request.Description;
+        product.Price = request.Price;
+        product.PendingMediaId = request.PendingMediaId;
+        product.StockQuantity = request.StockQuantity;
+        product.IsActive = request.IsActive;
+
+        // Replace category associations
+        var existingCats = await categoryRepository.FindAsync(
+            cp => cp.ProductId == request.Id, trackChanges: true, cancellationToken: cancellationToken);
+        foreach (var cp in existingCats)
+            categoryRepository.Remove(cp);
+
+        foreach (var categoryId in request.CategoryIds)
+            await categoryRepository.AddAsync(new CategorizedProduct { ProductId = request.Id, CategoryId = categoryId }, cancellationToken);
+
+        await repository.SaveChangesAsync(cancellationToken);
+
+        return Result.Success;
+    }
+}

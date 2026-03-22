@@ -1,0 +1,46 @@
+using Dukaan.Application.Core.Abstractions;
+using Dukaan.Application.Features.Products.Dtos;
+using Dukaan.Application.Interfaces;
+using Dukaan.Domain.Entities;
+using ErrorOr;
+
+namespace Dukaan.Application.Features.Products.Commands.CreateProduct;
+
+public class CreateProductHandler(
+    IRepository<Product> repository,
+    IRepository<CategorizedProduct> categoryRepository)
+    : ICommandHandler<CreateProductCommand, ErrorOr<ProductDto>>
+{
+    public async Task<ErrorOr<ProductDto>> Handle(CreateProductCommand request, CancellationToken cancellationToken)
+    {
+        var product = new Product
+        {
+            Name = request.Name,
+            Description = request.Description,
+            Price = request.Price,
+            PendingMediaId = request.PendingMediaId,
+            StockQuantity = request.StockQuantity
+        };
+
+        await repository.AddAsync(product);
+        await repository.SaveChangesAsync(cancellationToken);
+
+        foreach (var categoryId in request.CategoryIds)
+        {
+            var cp = new CategorizedProduct
+            {
+                ProductId = product.Id,
+                CategoryId = categoryId,
+            };
+            await categoryRepository.AddAsync(cp, cancellationToken);
+        }
+
+        await categoryRepository.SaveChangesAsync(cancellationToken);
+
+        return MapToDto(product);
+    }
+
+    private static ProductDto MapToDto(Product p) => new(
+        p.Id, p.Name, p.Description, p.Price, p.ImageUrl, p.PendingMediaId, p.StockQuantity, p.IsActive,
+        p.ProductCategories.Select(pc => pc.CategoryId).ToList());
+}
