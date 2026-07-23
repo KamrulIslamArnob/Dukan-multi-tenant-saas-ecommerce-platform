@@ -8,41 +8,68 @@
 
 ## Architecture Overview
 
-```
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                              DUKAAN PLATFORM                                    │
-│                                                                                 │
-│  ┌──────────────────────────────────────────────────────────────────────────┐   │
-│  │                        FRONTEND (Next.js 16)                             │   │
-│  │  React 19 · TanStack Query · Tailwind v4 · shadcn/ui · TypeScript 5     │   │
-│  └──────────┬───────────────────────────────┬───────────────────────────────┘   │
-│             │ HTTP REST                     │ SignalR WebSocket               │
-│             ▼                               ▼                                   │
-│  ┌──────────────────────┐    ┌──────────────────────────────────────────────┐   │
-│  │   DUKAAN API (5001)  │    │   NOTIFICATION API (5003)                    │   │
-│  │                      │───▶│                                              │   │
-│  │   Products · Orders  │Redis│   SignalR Hub · Redis Stream Consumer       │   │
-│  │   Cart · Merchants   │Stream│   Email Dispatch                            │   │
-│  │   Auth · Storefront  │    │                                              │   │
-│  └──────────┬───────────┘    └──────────────────────────────────────────────┘   │
-│             │ HTTP (Hangfire poll 30s)                                          │
-│             ▼                                                                   │
-│  ┌──────────────────────────────────────────────────────────────────────────┐   │
-│  │                     MEDIA API (5002)                                      │   │
-│  │                                                                        │   │
-│  │   Upload Processing · SkiaSharp · MinIO Storage                        │   │
-│  └──────────────────────────────────────────────────────────────────────────┘   │
-│                                                                                 │
-│  ┌──────────────────────────────────────────────────────────────────────────┐   │
-│  │                        INFRASTRUCTURE (Docker)                           │   │
-│  │   PostgreSQL 17 · Redis 7 · MinIO · MailHog                            │   │
-│  └──────────────────────────────────────────────────────────────────────────┘   │
-│                                                                                 │
-│  ┌──────────────────────────────────────────────────────────────────────────┐   │
-│  │                     OBSERVABILITY STACK                                  │   │
-│  │   Grafana (3001) · Loki (3100) · Tempo (3200) · Prometheus (9091)     │   │
-│  └──────────────────────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+%%{ init: { 'theme': 'base', 'themeVariables': { 'fontSize': '14px', 'fontFamily': 'handwriting' } } }%%
+graph LR
+    subgraph Frontend
+        A["🧑‍💻 Next.js Frontend<br/>Browser :3000"]
+    end
+
+    subgraph Service Layer
+        B["dukaan-api"]
+        C["dukaan-media"]
+        D["notification-api"]
+    end
+
+    subgraph Data Stores
+        E[("PostgreSQL")]
+        F[("MinIO S3")]
+        G[("Redis")]
+    end
+
+    subgraph Observability
+        H["OTel Collector"]
+        I["Prometheus"]
+        J["Loki"]
+        K["Tempo"]
+        L["Grafana"]
+    end
+
+    A -->|"REST :5001"| B
+    A -->|"Upload :5002"| C
+    A -->|"WebSocket :5003"| D
+
+    B -->|"Poll status"| C
+    B -->|"StreamAdd<br/>order-events"| G
+    B --> E
+
+    C --> E
+    C --> F
+    C --> H
+
+    D -->|"StreamReadGroup"| G
+    D -->|"SignalR Backplane"| G
+    D --> H
+
+    H --> I
+    H --> J
+    H --> K
+    L --> I
+    L --> J
+    L --> K
+
+    style A fill:#add8e6,stroke:#333,color:#000,rx:15,ry:15
+    style B fill:#b4d600,stroke:#333,color:#000,rx:15,ry:15
+    style C fill:#b4d600,stroke:#333,color:#000,rx:15,ry:15
+    style D fill:#b4d600,stroke:#333,color:#000,rx:15,ry:15
+    style E fill:#a8e6a8,stroke:#333,color:#000,rx:15,ry:15
+    style F fill:#a8e6a8,stroke:#333,color:#000,rx:15,ry:15
+    style G fill:#a8e6a8,stroke:#333,color:#000,rx:15,ry:15
+    style H fill:#f5c96a,stroke:#333,color:#000,rx:15,ry:15
+    style I fill:#f5c96a,stroke:#333,color:#000,rx:15,ry:15
+    style J fill:#f5c96a,stroke:#333,color:#000,rx:15,ry:15
+    style K fill:#f5c96a,stroke:#333,color:#000,rx:15,ry:15
+    style L fill:#f5a0a0,stroke:#333,color:#000,rx:15,ry:15
 ```
 
 ---
