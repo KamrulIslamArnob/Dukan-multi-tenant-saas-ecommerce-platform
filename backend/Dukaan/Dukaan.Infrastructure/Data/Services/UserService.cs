@@ -1,0 +1,177 @@
+using System.Text;
+using System.Security.Claims;
+using Dukaan.Application.Dtos;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using Dukaan.Application.Interfaces;
+using Dukaan.Application.Models;
+using Dukaan.Domain.Entities;
+using Dukaan.Infrastructure.Data.DbContext;
+using Dukaan.Infrastructure.Identity.Interfaces;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+
+namespace Dukaan.Infrastructure.Data.Services;
+
+public class UserService(
+    IConfiguration config,
+    ApplicationDbContext context,
+    IHttpContextAccessor httpContextAccessor,
+    IApplicationUserManagerAdapter applicationUserManager) : IUserService
+{
+    public Task<ApplicationUser?> FindByEmailAsync(string email)
+    {
+        return applicationUserManager.FindByEmailAsync(email);
+    }
+
+    public async Task<(Tenant tenant, Merchant Merchant, ApplicationUser User)?> GetMerchantByUserIdAsync(Guid userId)
+    {
+        var result = await (
+            from merchant in context.Merchants
+            join user in context.Users on merchant.ApplicationUserId equals user.Id
+            join tenant in context.Tenants on merchant.TenantId equals tenant.Id
+            where merchant.ApplicationUserId == userId
+            select new { tenant, merchant, user }
+        ).FirstOrDefaultAsync();
+
+        if (result is null) return null;
+        return (result.tenant, result.merchant, result.user);
+    }
+
+    private async Task<(Merchant Merchant, ApplicationUser User)?> GetMerchantByEmailAsync(string email)
+    {
+        // Use IgnoreQueryFilters() because during login there is no resolved tenant yet.
+        // The global tenant query filter would otherwise hide users from other tenants.
+        var query = 
+            from user in context.Users.IgnoreQueryFilters()
+            where user.NormalizedEmail == email.ToUpper() && user.UserType == UserType.Merchant
+            join merchant in context.Merchants.IgnoreQueryFilters() on user.Id equals merchant.ApplicationUserId
+            select new { merchant, user };
+
+        var result = await query.FirstOrDefaultAsync();
+
+        if (result is null) return null;
+        return (result.merchant, result.user);
+    }
+
+    private async Task<(Customer Customer, ApplicationUser User)?> GetCustomerByEmailAsync(string email)
+    {
+        var query = 
+            from customer in context.Customers
+            join user in context.Users on customer.ApplicationUserId equals user.Id
+            where user.NormalizedEmail == email.ToUpper() && user.UserType == UserType.Customer
+            select new { customer, user };
+
+        var result = await query.FirstOrDefaultAsync();
+
+        if (result is null) return null;
+        return (result.customer, result.user);
+    }
+    
+    public async Task<(Customer Customer, ApplicationUser User)?> GetCustomerByUserIdAsync(Guid userId)
+    {
+        var query =
+            from customer in context.Customers
+            join user in context.Users on customer.ApplicationUserId equals user.Id
+            where user.Id == userId && user.UserType == UserType.Customer
+            select new { customer, user };
+
+        var result = await query.FirstOrDefaultAsync();
+        if (result is null) return null;
+        return (result.customer, result.user);
+    }
+
+    public Guid? GetCurrentUserId()
+    {
+        var userIdClaim = httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return Guid.TryParse(userIdClaim, out var userId) ? userId : null;
+    }
+
+    public async Task<AuthResponseDto?> LoginMerchantAsync(LoginRequestDto request)
+    {
+        var result = await GetMerchantByEmailAsync(request.Email);
+        if (result is null) return null;
+
+        var user = result.Value.User;
+        var isValid = await applicationUserManager.CheckPasswordAsync(user, request.Password);
+        if (!isValid) return null;
+
+        var jwt = GenerateToken(user);
+        var minutes = config["jwt:ExpireInMinutes"];
+        var expiresAt = DateTime.UtcNow.AddMinutes(double.Parse(minutes!));
+        return new AuthResponseDto(jwt, expiresAt, user.TenantId);
+    }
+
+    public async Task<CustomerAuthResponseDto?> LoginCustomerAsync(CustomerLoginRequestDto request)
+    {
+        var result = await GetCustomerByEmailAsync(request.Email);
+        if (result is null) return null;
+
+
+        var user = result.Value.User;
+        var isValid = await applicationUserManager.CheckPasswordAsync(user, request.Password);
+        if (!isValid) return null;
+
+        var jwt = GenerateToken(user);
+        var minutes = config["jwt:ExpireInMinutes"];
+        var expiresAt = DateTime.UtcNow.AddMinutes(double.Parse(minutes!));
+
+        return new CustomerAuthResponseDto(jwt, user.Id, expiresAt, user.TenantId);
+    }
+
+    public async Task<ApplicationUser?> CreateUserAsync(string email, string password, string role, Guid? tenantId)
+    {
+        var user = new ApplicationUser
+        {
+            UserName = email,
+            Email = email,
+            UserType = Enum.Parse<UserType>(role),
+        };
+
+        if(tenantId.HasValue)
+        {
+            user.TenantId = tenantId.Value;
+        }
+
+        var result = await applicationUserManager.CreateAsync(user, password);
+        return result.Succeeded ? user : null;
+    }
+
+    public async Task<AuthResponseDto?> LoginAdminAsync(LoginRequestDto request)
+    {
+        var user = await applicationUserManager.FindByEmailAsync(request.Email);
+        if (user is null || user.UserType != UserType.Admin) return null;
+
+        var isValid = await applicationUserManager.CheckPasswordAsync(user, request.Password);
+        if (!isValid) return null;
+
+        var jwt = GenerateToken(user);
+        var minutes = config["jwt:ExpireInMinutes"];
+        var expiresAt = DateTime.UtcNow.AddMinutes(double.Parse(minutes!));
+        return new AuthResponseDto(jwt, expiresAt, user.TenantId);
+    }
+
+    private string GenerateToken(ApplicationUser user)
+    {
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new(ClaimTypes.Email, user.Email!),
+            new("tenant_id", user.TenantId.ToString()),
+            new("user_type", ((int)user.UserType).ToString())
+        };
+
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(claims),
+            Expires = DateTime.UtcNow.AddMinutes(double.Parse(config["jwt:ExpireInMinutes"]!)),
+            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(config["Jwt:Key"]!)), SecurityAlgorithms.HmacSha256)
+        };
+
+        var handler = new JwtSecurityTokenHandler();
+        var securityToken = handler.CreateToken(tokenDescriptor);
+        return handler.WriteToken(securityToken);
+    }
+}

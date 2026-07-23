@@ -1,0 +1,17 @@
+groups:
+  - name: dukaan_api_alerts
+    rules:
+      - alert: DukaanAPIHighErrorRate
+        expr: rate(http_requests_total{status=~"5..",job="dukaan-api"}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Dukaan API error rate above 10%"
+      - alert: DukaanAPISlowResponses
+        expr: histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{job="dukaan-api"}[5m])) > 3
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Dukaan API P99 latency above 3s"
