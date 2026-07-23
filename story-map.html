@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dukaan — Story Map</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --border: #1e1e2e;
+    --text: #e4e4ef;
+    --muted: #8888a8;
+    --accent: #6c5ce7;
+    --accent2: #00cec9;
+    --accent3: #fd79a8;
+    --accent4: #fdcb6e;
+    --gradient: linear-gradient(135deg, #6c5ce7, #00cec9);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(108,92,231,0.15) 0%, transparent 70%);
+    top: -200px; left: 50%; transform: translateX(-50%);
+    animation: pulse 4s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.5; }
+    50% { transform: translateX(-50%) scale(1.2); opacity: 0.8; }
+  }
+  .hero-badge {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 50px;
+    padding: 0.5rem 1.5rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 2rem;
+    animation: fadeIn 1s ease;
+  }
+  .hero h1 {
+    font-size: clamp(3rem, 8vw, 6rem);
+    font-weight: 800;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.03em;
+    animation: slideUp 1s ease 0.2s both;
+  }
+  .hero p {
+    font-size: 1.25rem;
+    color: var(--muted);
+    max-width: 600px;
+    margin-top: 1.5rem;
+    line-height: 1.7;
+    animation: slideUp 1s ease 0.4s both;
+  }
+  .hero-scroll {
+    position: absolute;
+    bottom: 2rem;
+    animation: bounce 2s infinite;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(10px); } }
+
+  ── SECTIONS ──
+  section {
+    padding: 6rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .section-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+  }
+  .section-subtitle {
+    color: var(--muted);
+    font-size: 1.1rem;
+    margin-bottom: 3rem;
+    max-width: 600px;
+  }
+
+  ── STORY MAP GRID ──
+  .story-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 1.5rem;
+  }
+  .story-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .story-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--gradient);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .story-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--accent);
+    box-shadow: 0 20px 40px rgba(108,92,231,0.1);
+  }
+  .story-card:hover::before { opacity: 1; }
+  .story-card .icon {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 1.25rem;
+    background: rgba(108,92,231,0.1);
+  }
+  .story-card h3 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  .story-card p {
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+  .story-card .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+  .story-card .tag {
+    background: rgba(108,92,231,0.1);
+    color: var(--accent);
+    font-size: 0.7rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 50px;
+    font-weight: 500;
+  }
+
+  ── TECH STACK ──
+  .stack-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+  .stack-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s;
+  }
+  .stack-item:hover {
+    border-color: var(--accent);
+    transform: scale(1.02);
+  }
+  .stack-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+  }
+  .stack-info h4 { font-size: 0.9rem; font-weight: 600; }
+  .stack-info span { font-size: 0.75rem; color: var(--muted); }
+
+  ── ARCHITECTURE ANIMATION ──
+  .arch-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 3rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .arch-svg {
+    width: 100%;
+    height: 500px;
+  }
+
+  ── PARTICLES ──
+  .particle {
+    position: absolute;
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0.6;
+    animation: float 6s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0) translateX(0); }
+    25% { transform: translateY(-20px) translateX(10px); }
+    50% { transform: translateY(-10px) translateX(-5px); }
+    75% { transform: translateY(-30px) translateX(15px); }
+  }
+
+  ── FLOW ANIMATION ──
+  .flow-line {
+    stroke-dasharray: 8 4;
+    animation: dash 1s linear infinite;
+  }
+  @keyframes dash {
+    to { stroke-dashoffset: -24; }
+  }
+
+  ── DATA FLOW PARTICLE ──
+  .data-particle {
+    fill: #00cec9;
+    filter: drop-shadow(0 0 6px #00cec9);
+  }
+
+  ── RESPONSIVE ──
+  @media (max-width: 768px) {
+    .arch-svg { height: 600px; }
+    .story-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HERO ═══════════ -->
+<div class="hero">
+  <div class="hero-badge">Portfolio Project &middot; 2026</div>
+  <h1>Dukaan</h1>
+  <p>A multi-tenant SaaS e-commerce platform built with .NET Clean Architecture, CQRS, and event-driven microservices — featuring real-time notifications and full observability.</p>
+  <div class="hero-scroll">Scroll to explore &darr;</div>
+</div>
+
+<!-- ═══════════ STORY MAP ═══════════ -->
+<section>
+  <h2 class="section-title">Story Map</h2>
+  <p class="section-subtitle">The journey from concept to production — each card represents a milestone in the build process.</p>
+
+  <div class="story-grid">
+    <div class="story-card">
+      <div class="icon">🏗️</div>
+      <h3>Clean Architecture Foundation</h3>
+      <p>Designed a strict layered architecture across three microservices — Domain, Application, Infrastructure, Host — ensuring dependencies flow inward and the domain remains framework-agnostic.</p>
+      <div class="tags"><span class="tag">Onion Architecture</span><span class="tag">Dependency Inversion</span></div>
+    </div>
+
+    <div class="story-card">
+      <div class="icon">🔐</div>
+      <h3>Multi-Tenant Isolation</h3>
+      <p>Implemented shared-database multi-tenancy with EF Core global query filters, tenant interceptors for auto-stamping, and tenant resolution middleware — keeping each merchant's data isolated at the application level.</p>
+      <div class="tags"><span class="tag">EF Core Filters</span><span class="tag">Interceptors</span></div>
+    </div>
+
+    <div class="story-card">
+      <div class="icon">📦</div>
+      <h3>CQRS via MediatR</h3>
+      <p>Separated commands and queries into distinct handlers with a FluentValidation pipeline behavior — keeping controllers thin as one-liners and centralizing cross-cutting concerns.</p>
+      <div class="tags"><span class="tag">MediatR</span><span class="tag">FluentValidation</span></div>
+    </div>
+
+    <div class="story-card">
+      <div class="icon">⚡</div>
+      <h3>Event-Driven Communication</h3>
+      <p>Wired Redis Streams for async cross-service events — order placement triggers notification dispatch through at-least-once delivery with consumer groups for load balancing.</p>
+      <div class="tags"><span class="tag">Redis Streams</span><span class="tag">At-Least-Once</span></div>
+    </div>
+
+    <div class="story-card">
+      <div class="icon">🔔</div>
+      <h3>Real-Time Notifications</h3>
+      <p>Built a SignalR hub with Redis backplane for horizontal scaling — delivering in-app alerts, email digests, and WebSocket pushes to the frontend with a strategy-pattern dispatcher.</p>
+      <div class="tags"><span class="tag">SignalR</span><span class="tag">Strategy Pattern</span></div>
+    </div>
+
+    <div class="story-card">
+      <div class="icon">🖼️</div>
+      <h3>Media Processing Pipeline</h3>
+      <p>Created a chunked upload protocol → MinIO storage → background SkiaSharp WebP conversion pipeline, generating original, display, and thumbnail variants asynchronously via Hangfire jobs.</p>
+      <div class="tags"><span class="tag">MinIO</span><span class="tag">SkiaSharp</span><span class="tag">Hangfire</span></div>
+    </div>
+
+    <div class="story-card">
+      <div class="icon">🎨</div>
+      <h3>Next.js 16 Storefront</h3>
+      <p>Built a responsive frontend with App Router, TanStack Query for server state, shadcn/ui components, and Tailwind v4 — covering merchant dashboards, customer storefronts, and admin panels.</p>
+      <div class="tags"><span class="tag">Next.js 16</span><span class="tag">React 19</span></div>
+    </div>
+
+    <div class="story-card">
+      <div class="icon">📊</div>
+      <h3>Full Observability Stack</h3>
+      <p>Instrumented the entire system with OpenTelemetry — shipping traces to Tempo, logs to Loki, metrics to Prometheus, all visualized in custom Grafana dashboards with alerting rules.</p>
+      <div class="tags"><span class="tag">OpenTelemetry</span><span class="tag">Grafana</span></div>
+    </div>
+
+    <div class="story-card">
+      <div class="icon">🧪</div>
+      <h3>Testing Strategy</h3>
+      <p>Unit tests with xUnit and FluentAssertions for backend handlers and dispatchers; Jest with React Testing Library for frontend components and hooks — ensuring critical paths are covered.</p>
+      <div class="tags"><span class="tag">xUnit</span><span class="tag">Jest</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ TECH STACK ═══════════ -->
+<section>
+  <h2 class="section-title">Tech Stack</h2>
+  <p class="section-subtitle">Every technology chosen for a specific architectural reason — no buzzword-driven decisions.</p>
+
+  <div class="stack-grid">
+    <div class="stack-item"><div class="stack-icon" style="background:rgba(108,92,231,0.15)">🔷</div><div class="stack-info"><h4>.NET 10</h4><span>Backend Runtime</span></div></div>
+    <div class="stack-item"><div class="stack-icon" style="background:rgba(0,206,201,0.15)">🎯</div><div class="stack-info"><h4>MediatR</h4><span>CQRS + Pipeline Behaviors</span></div></div>
+    <div class="stack-item"><div class="stack-icon" style="background:rgba(253,122,168,0.15)">✅</div><div class="stack-info"><h4>FluentValidation</h4><span>Request Validation</span></div></div>
+    <div class="stack-item"><div class="stack-icon" style="background:rgba(253,203,110,0.15)">🗄️</div><div class="stack-info"><h4>EF Core</h4><span>ORM + Query Filters</span></div></div>
+    <div class="stack-item"><div class="stack-icon" style="background:rgba(0,206,201,0.15)">📨</div><div class="stack-info"><h4>Redis Streams</h4><span>Async Event Bus</span></div></div>
+    <div class="stack-item"><div class="stack-icon" style="background:rgba(108,92,231,0.15)">📡</div><div class="stack-info"><h4>SignalR</h4><span>Real-Time WebSocket</span></div></div>
+    <div class="stack-item"><div class="stack-icon" style="background:rgba(253,122,168,0.15)">🖼️</div><div class="stack-info"><h4>MinIO</h4><span>S3 Object Storage</span></div></div>
+    <div class="stack-item"><div class="stack-icon" style="background:rgba(253,203,110,0.15)">🎨</div><div class="stack-info"><h4>SkiaSharp</h4><span>Image Processing</span></div></div>
+    <div class="stack-item"><div class="stack-icon" style="background:rgba(0,206,201,0.15)">⚡</div><div class="stack-info"><h4>Hangfire</h4><span>Background Jobs</span></div></div>
+    <div class="stack-item"><div class="stack-icon" style="background:rgba(108,92,231,0.15)">⚛️</div><div class="stack-info"><h4>Next.js 16</h4><span>React Framework</span></div></div>
+    <div class="stack-item"><div class="stack-icon" style="background:rgba(253,122,168,0.15)">🔄</div><div class="stack-info"><h4>TanStack Query</h4><span>Server State</span></div></div>
+    <div class="stack-item"><div class="stack-icon" style="background:rgba(253,203,110,0.15)">🎨</div><div class="stack-info"><h4>Tailwind v4</h4><span>Utility Styling</span></div></div>
+    <div class="stack-item"><div class="stack-icon" style="background:rgba(0,206,201,0.15)">🧩</div><div class="stack-info"><h4>shadcn/ui</h4><span>Component Library</span></div></div>
+    <div class="stack-item"><div class="stack-icon" style="background:rgba(108,92,231,0.15)">📊</div><div class="stack-info"><h4>OpenTelemetry</h4><span>Telemetry Pipeline</span></div></div>
+    <div class="stack-item"><div class="stack-icon" style="background:rgba(253,122,168,0.15)">📈</div><div class="stack-info"><h4>Grafana</h4><span>Visualization</span></div></div>
+    <div class="stack-item"><div class="stack-icon" style="background:rgba(253,203,110,0.15)">🐘</div><div class="stack-info"><h4>PostgreSQL 17</h4><span>Primary Database</span></div></div>
+    <div class="stack-item"><div class="stack-icon" style="background:rgba(0,206,201,0.15)">🔴</div><div class="stack-info"><h4>Redis 7</h4><span>Cache + Streams</span></div></div>
+    <div class="stack-item"><div class="stack-icon" style="background:rgba(108,92,231,0.15)">🐳</div><div class="stack-info"><h4>Docker Compose</h4><span>Local Infrastructure</span></div></div>
+    <div class="stack-item"><div class="stack-icon" style="background:rgba(253,122,168,0.15)">🧪</div><div class="stack-info"><h4>xUnit + Jest</h4><span>Testing Frameworks</span></div></div>
+  </div>
+</section>
+
+<!-- ═══════════ ARCHITECTURE ANIMATION ═══════════ -->
+<section>
+  <h2 class="section-title">System Architecture</h2>
+  <p class="section-subtitle">Animated data flow — watch how a customer order propagates through the entire system in real time.</p>
+
+  <div class="arch-container">
+    <svg class="arch-svg" viewBox="0 0 900 500" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#6c5ce7"/>
+          <stop offset="100%" style="stop-color:#00cec9"/>
+        </linearGradient>
+        <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" style="stop-color:#00cec9"/>
+          <stop offset="100%" style="stop-color:#fd79a8"/>
+        </linearGradient>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+          <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+
+      <!-- Background grid -->
+      <line x1="0" y1="100" x2="900" y2="100" stroke="#1e1e2e" stroke-width="0.5"/>
+      <line x1="0" y1="200" x2="900" y2="200" stroke="#1e1e2e" stroke-width="0.5"/>
+      <line x1="0" y1="300" x2="900" y2="300" stroke="#1e1e2e" stroke-width="0.5"/>
+      <line x1="0" y1="400" x2="900" y2="400" stroke="#1e1e2e" stroke-width="0.5"/>
+      <line x1="180" y1="0" x2="180" y2="500" stroke="#1e1e2e" stroke-width="0.5"/>
+      <line x1="360" y1="0" x2="360" y2="500" stroke="#1e1e2e" stroke-width="0.5"/>
+      <line x1="540" y1="0" x2="540" y2="500" stroke="#1e1e2e" stroke-width="0.5"/>
+      <line x1="720" y1="0" x2="720" y2="500" stroke="#1e1e2e" stroke-width="0.5"/>
+
+      <!-- ── CLIENT LAYER ── -->
+      <rect x="20" y="20" width="140" height="60" rx="12" fill="#12121a" stroke="#6c5ce7" stroke-width="1.5"/>
+      <text x="90" y="45" text-anchor="middle" fill="#e4e4ef" font-size="11" font-weight="600">Browser</text>
+      <text x="90" y="62" text-anchor="middle" fill="#8888a8" font-size="9">Next.js 16 SPA</text>
+
+      <!-- ── API GATEWAY / HOST ── -->
+      <rect x="200" y="20" width="140" height="60" rx="12" fill="#12121a" stroke="#00cec9" stroke-width="1.5"/>
+      <text x="270" y="45" text-anchor="middle" fill="#e4e4ef" font-size="11" font-weight="600">Dukaan API</text>
+      <text x="270" y="62" text-anchor="middle" fill="#8888a8" font-size="9">ASP.NET Host</text>
+
+      <!-- ── APPLICATION ── -->
+      <rect x="380" y="20" width="140" height="60" rx="12" fill="#12121a" stroke="#fd79a8" stroke-width="1.5"/>
+      <text x="450" y="45" text-anchor="middle" fill="#e4e4ef" font-size="11" font-weight="600">Application</text>
+      <text x="450" y="62" text-anchor="middle" fill="#8888a8" font-size="9">MediatR Handlers</text>
+
+      <!-- ── DOMAIN ── -->
+      <rect x="560" y="20" width="140" height="60" rx="12" fill="#12121a" stroke="#fdcb6e" stroke-width="1.5"/>
+      <text x="630" y="45" text-anchor="middle" fill="#e4e4ef" font-size="11" font-weight="600">Domain</text>
+      <text x="630" y="62" text-anchor="middle" fill="#8888a8" font-size="9">Entities + Interfaces</text>
+
+      <!-- ── INFRASTRUCTURE ── -->
+      <rect x="740" y="20" width="140" height="60" rx="12" fill="#12121a" stroke="#6c5ce7" stroke-width="1.5"/>
+      <text x="810" y="45" text-anchor="middle" fill="#e4e4ef" font-size="11" font-weight="600">Infrastructure</text>
+      <text x="810" y="62" text-anchor="middle" fill="#8888a8" font-size="9">EF Core + Services</text>
+
+      <!-- ── MEDIA SERVICE ── -->
+      <rect x="200" y="140" width="140" height="60" rx="12" fill="#12121a" stroke="#00cec9" stroke-width="1.5"/>
+      <text x="270" y="165" text-anchor="middle" fill="#e4e4ef" font-size="11" font-weight="600">Media Service</text>
+      <text x="270" y="182" text-anchor="middle" fill="#8888a8" font-size="9">MinIO + SkiaSharp</text>
+
+      <!-- ── NOTIFICATION SERVICE ── -->
+      <rect x="380" y="140" width="140" height="60" rx="12" fill="#12121a" stroke="#fd79a8" stroke-width="1.5"/>
+      <text x="450" y="165" text-anchor="middle" fill="#e4e4ef" font-size="11" font-weight="600">Notification Service</text>
+      <text x="450" y="182" text-anchor="middle" fill="#8888a8" font-size="9">SignalR + Dispatchers</text>
+
+      <!-- ── REDIS ── -->
+      <rect x="560" y="140" width="140" height="60" rx="12" fill="#12121a" stroke="#e17055" stroke-width="1.5"/>
+      <text x="630" y="165" text-anchor="middle" fill="#e4e4ef" font-size="11" font-weight="600">Redis</text>
+      <text x="630" y="182" text-anchor="middle" fill="#8888a8" font-size="9">Streams + Cache + PubSub</text>
+
+      <!-- ── DATABASE ── -->
+      <rect x="200" y="260" width="140" height="60" rx="12" fill="#12121a" stroke="#6c5ce7" stroke-width="1.5"/>
+      <text x="270" y="285" text-anchor="middle" fill="#e4e4ef" font-size="11" font-weight="600">PostgreSQL 17</text>
+      <text x="270" y="302" text-anchor="middle" fill="#8888a8" font-size="9">Multi-tenant Database</text>
+
+      <!-- ── MINIO ── -->
+      <rect x="380" y="260" width="140" height="60" rx="12" fill="#12121a" stroke="#00cec9" stroke-width="1.5"/>
+      <text x="450" y="285" text-anchor="middle" fill="#e4e4ef" font-size="11" font-weight="600">MinIO</text>
+      <text x="450" y="302" text-anchor="middle" fill="#8888a8" font-size="9">S3 Object Storage</text>
+
+      <!-- ── OBSERVABILITY ── -->
+      <rect x="560" y="260" width="140" height="60" rx="12" fill="#12121a" stroke="#fdcb6e" stroke-width="1.5"/>
+      <text x="630" y="285" text-anchor="middle" fill="#e4e4ef" font-size="11" font-weight="600">Observability</text>
+      <text x="630" y="302" text-anchor="middle" fill="#8888a8" font-size="9">OTel + Grafana Stack</text>
+
+      <!-- ── HANGFIRE ── -->
+      <rect x="740" y="140" width="140" height="60" rx="12" fill="#12121a" stroke="#a29bfe" stroke-width="1.5"/>
+      <text x="810" y="165" text-anchor="middle" fill="#e4e4ef" font-size="11" font-weight="600">Hangfire</text>
+      <text x="810" y="182" text-anchor="middle" fill="#8888a8" font-size="9">Background Jobs</text>
+
+      <!-- ── DATA FLOW ANIMATIONS ──>
+
+      <!-- Browser -> API (HTTP) -->
+      <line x1="160" y1="50" x2="200" y2="50" stroke="url(#grad1)" stroke-width="2" class="flow-line"/>
+      <circle class="data-particle" r="4">
+        <animateMotion dur="2s" repeatCount="indefinite" path="M160,50 L200,50"/>
+      </circle>
+
+      <!-- API -> Application -->
+      <line x1="340" y1="50" x2="380" y2="50" stroke="url(#grad1)" stroke-width="2" class="flow-line"/>
+      <circle class="data-particle" r="4">
+        <animateMotion dur="2s" repeatCount="indefinite" path="M340,50 L380,50"/>
+      </circle>
+
+      <!-- Application -> Domain -->
+      <line x1="520" y1="50" x2="560" y2="50" stroke="url(#grad1)" stroke-width="2" class="flow-line"/>
+      <circle class="data-particle" r="4">
+        <animateMotion dur="2s" repeatCount="indefinite" path="M520,50 L560,50"/>
+      </circle>
+
+      <!-- Domain -> Infrastructure -->
+      <line x1="700" y1="50" x2="740" y2="50" stroke="url(#grad1)" stroke-width="2" class="flow-line"/>
+      <circle class="data-particle" r="4">
+        <animateMotion dur="2s" repeatCount="indefinite" path="M700,50 L740,50"/>
+      </circle>
+
+      <!-- API -> Media (HTTP Polling) -->
+      <line x1="270" y1="80" x2="270" y2="140" stroke="#00cec9" stroke-width="1.5" class="flow-line"/>
+      <circle class="data-particle" r="3">
+        <animateMotion dur="3s" repeatCount="indefinite" path="M270,80 L270,140"/>
+      </circle>
+
+      <!-- API -> Redis (Event) -->
+      <line x1="340" y1="65" x2="560" y2="155" stroke="#e17055" stroke-width="1.5" class="flow-line"/>
+      <circle class="data-particle" r="3">
+        <animateMotion dur="2.5s" repeatCount="indefinite" path="M340,65 L560,155"/>
+      </circle>
+
+      <!-- Redis -> Notification (Stream Consume) -->
+      <line x1="560" y1="170" x2="520" y2="170" stroke="#fd79a8" stroke-width="1.5" class="flow-line"/>
+      <circle class="data-particle" r="3">
+        <animateMotion dur="2s" repeatCount="indefinite" path="M560,170 L520,170"/>
+      </circle>
+
+      <!-- Notification -> Browser (SignalR Push) -->
+      <path d="M380,170 Q90,170 90,80" stroke="#fd79a8" stroke-width="1.5" fill="none" class="flow-line"/>
+      <circle class="data-particle" r="3">
+        <animateMotion dur="3s" repeatCount="indefinite" path="M380,170 Q90,170 90,80"/>
+      </circle>
+
+      <!-- Infrastructure -> PostgreSQL -->
+      <line x1="740" y1="80" x2="340" y2="280" stroke="#6c5ce7" stroke-width="1.5" class="flow-line"/>
+      <circle class="data-particle" r="3">
+        <animateMotion dur="3s" repeatCount="indefinite" path="M740,80 L340,280"/>
+      </circle>
+
+      <!-- Media -> MinIO -->
+      <line x1="340" y1="170" x2="380" y2="270" stroke="#00cec9" stroke-width="1.5" class="flow-line"/>
+      <circle class="data-particle" r="3">
+        <animateMotion dur="2.5s" repeatCount="indefinite" path="M340,170 L380,270"/>
+      </circle>
+
+      <!-- Infrastructure -> Observability -->
+      <line x1="740" y1="80" x2="630" y2="260" stroke="#fdcb6e" stroke-width="1.5" class="flow-line"/>
+      <circle class="data-particle" r="3">
+        <animateMotion dur="3.5s" repeatCount="indefinite" path="M740,80 L630,260"/>
+      </circle>
+
+      <!-- API -> Hangfire -->
+      <line x1="340" y1="50" x2="740" y2="155" stroke="#a29bfe" stroke-width="1.5" class="flow-line"/>
+      <circle class="data-particle" r="3">
+        <animateMotion dur="3s" repeatCount="indefinite" path="M340,50 L740,155"/>
+      </circle>
+
+      <!-- ── LEGEND ── -->
+      <rect x="20" y="380" width="860" height="100" rx="12" fill="#0e0e16" stroke="#1e1e2e"/>
+      <text x="40" y="405" fill="#e4e4ef" font-size="10" font-weight="600">DATA FLOW LEGEND</text>
+
+      <line x1="40" y1="430" x2="80" y2="430" stroke="#6c5ce7" stroke-width="2" class="flow-line"/>
+      <text x="90" y="434" fill="#8888a8" font-size="9">HTTP Request/Response</text>
+
+      <line x1="250" y1="430" x2="290" y2="430" stroke="#e17055" stroke-width="2" class="flow-line"/>
+      <text x="300" y="434" fill="#8888a8" font-size="9">Redis Stream Event</text>
+
+      <line x1="460" y1="430" x2="500" y2="430" stroke="#fd79a8" stroke-width="2" class="flow-line"/>
+      <text x="510" y="434" fill="#8888a8" font-size="9">SignalR WebSocket Push</text>
+
+      <line x1="40" y1="460" x2="80" y2="460" stroke="#00cec9" stroke-width="2" class="flow-line"/>
+      <text x="90" y="464" fill="#8888a8" font-size="9">Background Job (Hangfire)</text>
+
+      <line x1="250" y1="460" x2="290" y2="460" stroke="#fdcb6e" stroke-width="2" class="flow-line"/>
+      <text x="300" y="464" fill="#8888a8" font-size="9">Telemetry (OpenTelemetry)</text>
+
+      <line x1="460" y1="460" x2="500" y2="460" stroke="#a29bfe" stroke-width="2" class="flow-line"/>
+      <text x="510" y="464" fill="#8888a8" font-size="9">Image Processing Pipeline</text>
+    </svg>
+  </div>
+</section>
+
+<!-- ═══════════ DATA FLOW SEQUENCE ═══════════ -->
+<section>
+  <h2 class="section-title">Order Lifecycle</h2>
+  <p class="section-subtitle">How a single order placement triggers a cascade of events across the system.</p>
+
+  <div class="story-grid">
+    <div class="story-card">
+      <div class="icon">1️⃣</div>
+      <h3>Customer Places Order</h3>
+      <p>POST /api/orders with cart items — validated by FluentValidation pipeline, processed by PlaceOrderHandler, persisted to PostgreSQL with tenant isolation.</p>
+    </div>
+    <div class="story-card">
+      <div class="icon">2️⃣</div>
+      <h3>Event Published to Redis</h3>
+      <p>OrderCreated event pushed to Redis Streams "order-events" — decoupling the API from downstream consumers via at-least-once delivery semantics.</p>
+    </div>
+    <div class="story-card">
+      <div class="icon">3️⃣</div>
+      <h3>Notification Consumer Reacts</h3>
+      <p>OrderEventConsumer reads from the stream using consumer groups — dispatches notifications through InApp, Signal (WebSocket), and Email channels via strategy pattern.</p>
+    </div>
+    <div class="story-card">
+      <div class="icon">4️⃣</div>
+      <h3>Merchant Sees Real-Time Alert</h3>
+      <p>SignalR WebSocket push delivers the notification to the merchant's dashboard — they see the new order appear instantly without polling or refresh.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ FOOTER ═══════════ -->
+<section style="text-align:center; padding-bottom: 4rem;">
+  <p style="color: var(--muted); font-size: 0.9rem;">Built with Clean Architecture principles &middot; CQRS &middot; Event-Driven Design &middot; Real-Time Systems</p>
+</section>
+
+<script>
+  // Intersection Observer for scroll animations
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.opacity = '1';
+        entry.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.story-card, .stack-item').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(20px)';
+    el.style.transition = 'all 0.6s ease';
+    observer.observe(el);
+  });
+</script>
+
+</body>
+</html>
